@@ -1,0 +1,37 @@
+import java.util.Scanner;
+
+public class Saving {
+    double balance =0.0;
+    double savings=0.0;
+    double savingsPercentage=0.0;
+
+    public void activateSavings() {
+        Scanner sc = new Scanner(System.in);
+        //assume user choose case 4, Savings
+        System.out.println("== Savings ==");
+        System.out.print("Are you sure you want to activate it? (Y/N) : ");
+        String activate = sc.nextLine();
+
+        if (activate.equalsIgnoreCase("Y")) {
+            System.out.print("Please enter the percentage you wish to deduct from the next debit: ");
+            savingsPercentage = sc.nextDouble();
+            System.out.println("\n\n\nSavings Settings added successfully!!!");
+        } else {
+            System.out.println("Savings activation cancelled.");
+        }
+    }
+
+    public void recordDebit(double amount, String description) {
+        if (amount > 0) {
+            balance -= amount;
+            double savingsAmount = (savingsPercentage / 100) * amount;
+            savings += savingsAmount;
+        } 
+    }
+
+    public void endMonthTransfer() {
+        balance += savings;
+        savings = 0.0; // Reset savings after transfer
+       
+    }
+}
