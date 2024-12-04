@@ -1,4 +1,5 @@
 // scince there is continuty between debit, credit and savings so I display the all code 
+// though this code can work, i may ignore some details as a result some calculates are wrong i will continue update it 
 
 public static boolean connectiontodatabase(double amountdebit, String balancedescription, int USERID) {
         Connection conn = null;
