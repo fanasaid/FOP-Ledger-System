@@ -1,4 +1,6 @@
- public static boolean connectiontodatabase(double amountdebit, String balancedescription, int USERID) {
+// scince there is continuty between debit, credit and savings so I display the all code 
+
+public static boolean connectiontodatabase(double amountdebit, String balancedescription, int USERID) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
