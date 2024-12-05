@@ -1,0 +1,32 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ */
+
+package com.mycompany.creditloan;
+
+/**
+ *
+ * @author batrisyia
+ */
+import java.util.Scanner;
+public class CreditLoan {
+
+    public static void main(String[] args) {
+        Scanner sc=new Scanner (System.in);
+        //assume user choose case 5, Credit Loan
+        System.out.print("Enter a specified principal amount:RM ");
+        double pAmount=sc.nextDouble();
+        System.out.print("Enter interest rate (in %): ");
+        double rate=sc.nextDouble();
+        System.out.print("Enter repayment period (in month): ");
+        int period=sc.nextInt();
+        
+        double totalRepayment = pAmount+(pAmount*(rate/100));
+        double monthlyPayment = totalRepayment/period;
+        
+        
+        for (int month=1; month<=period; month++) {
+        System.out.printf("Month "+month+": Pay %.2f\n", monthlyPayment);
+        }
+    }
+}
