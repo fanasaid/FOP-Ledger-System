@@ -1,0 +1,46 @@
+case 5:
+                System.out.print("Enter a specified principal amount:RM");
+                double pAmount = menuchoice.nextDouble();
+                System.out.print("Enter interest rate (in %): ");
+                double rate = menuchoice.nextDouble();
+                System.out.print("Enter repayment period (in month):");
+                int period = menuchoice.nextInt();
+                double totalRepayment = pAmount+(pAmount*(rate/100));
+                double monthlyPayment = totalRepayment/period;
+
+                for (int month=1; month<=period; month++) {
+                    System.out.printf("Month "+month+": Pay %.2f\n", monthlyPayment);
+                }
+                inserintoLoans(USERID, pAmount, rate, period);
+
+
+    public static void inserintoLoans(int USERID, double pAmount, double rate, int period) {
+
+    Connection conn = null;
+    PreparedStatement pstmt = null;
+    try{
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+
+        String insert = "INSERT INTO LOANS (user_id, principal_amount, interest_rate, repayment_period, status) VALUES(?,?,?,?,'active')";
+        pstmt = conn.prepareStatement(insert);
+        pstmt.setInt(1, USERID);
+        pstmt.setDouble(2, pAmount);
+        pstmt.setDouble(3, rate);
+        pstmt.setInt(4, period);
+        int countrows = pstmt.executeUpdate();
+        if (countrows > 0){
+            System.out.println("Your loans have been recorded!!!");
+        }
+
+
+
+
+    } catch (SQLException e) {
+        throw new RuntimeException(e);
+    } catch (ClassNotFoundException e) {
+        throw new RuntimeException(e);
+    }
+}
+
+    
