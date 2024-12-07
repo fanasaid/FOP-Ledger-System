@@ -1,0 +1,168 @@
+import java.time.LocalDateTime; //used in date n time setting
+import java.time.format.DateTimeFormatter;//used in date n time setting
+import java.util.Scanner;
+public class Repay_loan {
+
+    private final Object lock = new Object();
+    private double outstanding_balance;
+    
+    
+    private LocalDateTime startDate = LocalDateTime.now(); //this is just temporary btw
+    //URGENT!!!
+    //"private LocalDateTime startDate = LocalDateTime.now();" needs to be initialised under credit loan pay 
+    //to start counting of 30 days
+    
+    public static String currentTime(){
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return dtf.format(now);
+    }
+
+    
+    public Repay_loan() {
+        outstanding_balance = 500; 
+       /*
+        *500 is just an example for testing, replace and connect with actual monthly payment
+        *
+        */
+       
+        Scanner scanner = new Scanner(System.in);
+        
+        
+        System.out.println("**************CREDIT LOAN*****************");
+        int repay=0 ;
+        while(repay!=3){
+        System.out.println("Please enter which transaction you wish to proceed.");
+        System.out.println("1. Pay Remaining Monthly Loan");
+        System.out.println("2. Check remainder balance for the month");
+        System.out.println("3. Return to Main Menu");
+        repay = scanner.nextInt();
+        
+        
+        switch (repay){
+            case 1:
+                synchronized (lock){ //helps to prevent overlapping of values 
+                System.out.print("Please enter an amount : ");
+                double payment = scanner.nextDouble();
+                if(payment>0){
+                outstanding_balance-=payment; //deduct for current credit loan balance
+                //connect outstanding balance to sql pls
+                }
+                }
+                System.out.println("Your transaction has been accounted.\nThank You for using HoneyVault!");
+                System.out.println(currentTime());
+                System.out.println("\n\n");
+                break;
+            
+            case 2: 
+                synchronized (lock){
+                System.out.println("******************************************\n");
+                System.out.println("Your ongoing balance this month is RM"+outstanding_balance);
+                System.out.println("******************************************\n");
+                
+                synchronized (lock){
+                LocalDateTime now = LocalDateTime.now();
+                long daysBetween = java.time.Duration.between(startDate, now).toDays(); // Calculate days between
+                
+                if (daysBetween >= 30) { // check whether at least 30 days have passed
+                    if (outstanding_balance > 0) { //if got balance left unpaid
+                        System.out.println("Credit and debit usage is barred due to late payment.\nWe apologize for any inconvenience caused.");
+                        
+                        
+                    } else {//if dont got balance
+                        System.out.println("No outstanding balance.");
+                    }
+                    System.out.println("Thank you for patience and understanding.");
+                    
+                    startDate = now;//set new startDate ONLY if passed 30 days
+                    
+                } else { //count how many days in between now to next payment
+                    long nextPayment;
+                    nextPayment = 30-daysBetween; //30 days set between each month
+                    System.out.println("Number of days till next monthly payment due is " +nextPayment);
+                    System.out.println("\n\n");
+                }
+                
+                //add this section of code under credit and debit
+                //i put an example of the code snippet below
+                
+                
+            }
+                
+                }
+                break;
+            
+            case 3: 
+                return;//exits loop
+                
+            default :
+                System.out.println("Invalid selection.");
+                break;//continue loop 
+        }        
+        
+        }
+        
+        
+        
+    }
+
+    public static void main(String[] args) {
+        Repay_loan loanRepayment = new Repay_loan();//start loan repayment system
+    }
+    
+    
+}
+
+
+
+               /*
+               
+                synchronized (lock){
+                LocalDateTime now = LocalDateTime.now();
+                long daysBetween = java.time.Duration.between(startDate, now).toDays(); // Calculate days between
+                
+                if (daysBetween >= 30) { // check whether at least 30 days have passed
+                    if (outstanding_balance > 0) { //if got balance left unpaid
+                        System.out.println("Credit and debit usage is barred due to late payment.\nWe apologize for any inconvenience caused.");
+                        
+                        
+                    } else {//if dont got balance
+                        System.out.println("No outstanding balance.");
+                    }
+                    System.out.println("Thank you for patience and understanding.");
+                    
+                    startDate = now;//set new startDate ONLY if passed 30 days
+                    
+                } else { //count how many days in between now to next payment
+                    long nextPayment;
+                    nextPayment = 30-daysBetween; //30 days set between each month
+                    System.out.println("Number of days till next monthly payment due is " +nextPayment);
+                    System.out.println("\n\n");
+                
+                
+                Scanner g = new Scanner(System.in);
+                System.out.print("Enter credit or debit : ");
+                int transaction_type = g.nextInt(); //sub-menu selection input
+
+                switch (transaction_type){
+
+                'temporary' switch case to lead user to selected sub-menu
+                later can be combined with other cases
+
+                    case 1 :
+
+                        while(credTrue){
+                            Scanner amCred = new Scanner (System.in);
+                            System.out.print("Enter amount: ");
+                            double amount = amCred.nextDouble(); //amount for credit transaction
+
+                            if(amount>0 && amount<100000){
+                                //add in database for sql here
+                                credTrue = false;
+                            }else{
+                                System.out.println("Please enter a valid amount.");
+                            }
+                        }
+                *
+                *btw this part is to allow for credit and debit to be barred.
+                */
