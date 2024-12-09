@@ -1,0 +1,27 @@
+
+//at your code's line of
+
+public static void updateoutstandingbalance(int USERID, double outstandingbalance){
+    Connection conn = null;
+    PreparedStatement pstmt = null;
+
+    try {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+
+        String update = "UPDATE Loans SET OUTSTANDING_BALANCE = ? , status = 'repaid' WHERE USERID = ?";
+        pstmt = conn..prepareStatement(update);
+
+        pstmt.setDouble(1, outstandingbalance);
+        pstmt.setInt(2, USERID);
+        int countrows = pstmt.executeUpdate();
+        if (countrows > 0){
+            System.out.println("UPDATE SUCCESSFULLY");
+        }
+
+    } catch (ClassNotFoundException e) {
+        throw new RuntimeException(e);
+    }
+
+
+}
