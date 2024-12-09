@@ -1,0 +1,147 @@
+
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        UserManager userManager = new UserManager();
+        Scanner sc = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("Register");
+            System.out.println("Login");
+            System.out.println("Exit");
+            System.out.print("Choose an option: ");
+            int choice = sc.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter username: ");
+                    String username = sc.nextLine();
+
+                    System.out.print("Enter email: ");
+                    String email = sc.nextLine();
+
+                    System.out.print("Enter password: ");
+                    String password = sc.nextLine();
+                    int user_id = registerUser(name, email, password);
+
+                    userManager.registerUser(username, email, password);
+                    break;
+
+                case 2:
+                    System.out.print("Enter email: ");
+                    email = sc.nextLine();
+
+                    System.out.print("Enter password: ");
+                    password = sc.nextLine();
+
+                    userManager.loginUser(email, password);
+                    break;
+
+                case 3:
+                    System.out.println("Exiting the system...");
+                    return;
+
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+public static int userManager.registerUser(String name, String email, String password) {
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            //注册驱动
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            //获取连接
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+            //获取预编译的数据库操作对象
+            String insert = "INSERT INTO Users(name, email, password) VALUES (?, ?, ?)";
+
+            String selectuser_id = "SELECT user_id FROM Users WHERE email = ?";
+
+            pstmt = conn.prepareStatement(insert);
+            //给问号传递信息
+            pstmt.setString(1, name);
+            pstmt.setString(2, email);
+            pstmt.setString(3, password);
+
+            //执行SQL语句
+            int count = pstmt.executeUpdate();
+            if (count > 0) {
+                pstmt = conn.prepareStatement(selectuser_id);
+                pstmt.setString(1, email);
+                rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    System.out.println("Your user_id is: " + rs.getInt(1) + "Please remember!!!");
+                    String insert2 = "INSERT INTO Account_Balance (user_id, balance) VALUES (?, 0.00)";
+                    pstmt = conn.prepareStatement(insert2);
+                    pstmt.setInt(1, rs.getInt(1));
+                    int countinsert2 = pstmt.executeUpdate();
+                    if (countinsert2 > 0) {
+                        System.out.println("Your Account_Balance user_id is: " + rs.getInt(1) + "Please remember!!!");
+                    }
+                    return rs.getInt(1);
+                }
+
+            } else {
+                System.out.println("Failed try again.");
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        return -1; // 注册失败返回 -1
+    }
+
+ public static int userManager.loginUser(String loginemail, String loginpassword){
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try{
+            //注册驱动
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            //获取连接
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+            //获取预编译的数据库操作对象
+            String selectdatabase = "SELECT * FROM Users WHERE email = ? AND password = ?";
+
+
+            pstmt = conn.prepareStatement(selectdatabase);
+            //给问号传递信息
+            pstmt.setString(1, loginemail);
+            pstmt.setString(2, loginpassword);
+
+            //执行SQL语句
+
+            rs = pstmt.executeQuery();
+            if (rs.next()){
+                System.out.println("your user_id is: "+ rs.getInt(1) + "Please remember!!!!");
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return -1; // 注册失败返回 -1
+    }
+
+
+
+
+
+
+
+
+
+}
