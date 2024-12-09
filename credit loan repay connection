@@ -1,5 +1,5 @@
 
-//at your code's line of
+//at your code's line of 49 i add a method called updateoutstandingbalance(USERID, outstanding_balance)
 
 public static void updateoutstandingbalance(int USERID, double outstandingbalance){
     Connection conn = null;
