@@ -19,46 +19,39 @@ public static void displaytransactionshistory(int USERID){
             rs = pstmt.executeQuery();
             if (rs.next()){
 
-                double accountbalance = rs.getDouble("balance");
-                String select = "SELECT transaction_type, amount, description, date FROM Transactions WHERE user_id = ?";
+                double accountbalance = rs.getDouble("balance");//得到了balance
+                String select = "SELECT transaction_type, amount, description, date, balance FROM Transactions WHERE user_id = ?";
                 pstmt = conn.prepareStatement(select);
                 pstmt.setInt(1, USERID);
                 rs = pstmt.executeQuery();
 
                 System.out.printf("%-20s %-20s %-20s %-20s %-20s", "Date", "Description", "Debit", "Credit","Balance");
                 System.out.println("\n");
-                String sum = "SELECT SUM(amount) AS amount FROM transactions WHERE user_id = ?";
-                pstmt = conn.prepareStatement(sum);
-                pstmt.setInt(1, USERID);
-                ResultSet rs2 = pstmt.executeQuery();
-
-                //double sumdebitcredit = rs2.getDouble("amount");
-
-
-
 
                 while (rs.next()){
                     //double sumdebitcredit = rs2.getDouble("amount");
                     String date = rs.getString("date");
+
                     String description = rs.getString("description");
                     String transaction_type = rs.getString("transaction_type");
-                    double amount = rs.getDouble("amount");
+                    String balance = rs.getString("balance");
 
-                    if ("debit".equalsIgnoreCase(transaction_type)&&rs2.next()){
-                        double sumdebitcredit = rs2.getDouble("amount");
-                        double amountdebit =  amount;
-                        double amountcredit = 0.00;
 
-                        accountbalance = accountbalance + sumdebitcredit - amountdebit;
-                        System.out.printf("%-20s %-20s %-20f %-20f %-20f", date, description, amountdebit, amountcredit, accountbalance);
+                    if ("debit".equalsIgnoreCase(transaction_type)){
+                        double debit = rs.getDouble("amount");
+                        double credit = 0.00;
+                        System.out.println("\n");
+                        System.out.printf("%-20s %-20s %-20.2f %-20.2f %-20s", date, description, debit, credit, balance);
+
                     }
                     else if ("credit".equalsIgnoreCase(transaction_type)){
-                        double amountcredit = rs.getDouble("amount");
-                        double amountdebit = 0.00;
-                        accountbalance = accountbalance - amountcredit;
+                        double credit = rs.getDouble("amount");
+                        double debit = 0.00;
+
                         System.out.println("\n");
-                        System.out.printf("%-20s %-20s %-20f %-20f %-20f", date, description, amountdebit, amountcredit, accountbalance);}
-                }
+                        System.out.printf("%-20s %-20s %-20.2f %-20.2f %-20s", date, description, debit, credit, balance);}
+
+                 }
 
             }
 
