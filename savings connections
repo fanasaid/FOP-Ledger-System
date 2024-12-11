@@ -1,1 +1,360 @@
+import java.time.LocalDate;
+import java.util.Scanner;
 
+    public class Saving {
+        double balance =0.0;
+        double savings=0.0;
+        double savingsPercentage=0.0;
+        LocalDate startDate=null;
+        LocalDate endDate=null;
+
+        public void activateSavings() {
+            Scanner sc = new Scanner(System.in);
+            //assume user choose case 4, Savings
+            System.out.println("== Savings ==");
+            System.out.print("Are you sure you want to activate it? (Y/N) : ");
+            String activate = sc.nextLine();
+
+            if (activate.equalsIgnoreCase("Y")) {
+                System.out.print("Please enter the percentage you wish to deduct from the next debit: ");
+                savingsPercentage = sc.nextDouble();
+                 insertintosavings(USERID, savingsPercentage);
+                 insertintosavingbalance(USERID);
+if(savingsPercentage>=0 && savingsPercentage<=100){
+                    startDate=LocalDate.now();
+                    endDate=startDate.withDayOfMonth(startDate.lengthOfMonth());
+                System.out.println("\n\n\nSavings Settings added successfully!!!");
+                } else{
+                    System.out.println("Invalid percentage.");
+                    savingsPercentage=0.0;
+                }
+            } else{
+                System.out.println("Savings activation cancelled.");
+            }
+        }
+
+        public void recordDebit(double amount, String description) {
+            if (amount > 0) {
+                double savingsAmount = (savingsPercentage / 100) * amount;
+                savings += savingsAmount;
+                balance -= amount;
+            } 
+        }
+
+        public void endMonthTransfer() {
+            if(savings>0){
+                if(LocalDate.now().isAfter(endDate)||LocalDate.now().isEqual(endDate)){
+                   balance += savings;
+                   savings = 0.0; // Reset savings after transfer 
+                }
+            }
+        }
+        public static void main(String[] args) {
+        Saving test = new Saving();
+        Scanner sc = new Scanner(System.in);
+
+        test.activateSavings(); // Activate savings
+        test.endMonthTransfer(); // Check and perform auto-transfer
+    }
+}
+//this part should be belong to debit part but when the savings activate it have to be a small changes and conduct the if structure
+public static boolean connectiontodatabase(double amountdebit, String balancedescription, int USERID) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+            String sql = "SELECT balance FROM transactions WHERE user_id = ? ORDER BY date DESC LIMIT 1";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, USERID);
+            rs = pstmt.executeQuery();
+            double currentbalance = 0.00;
+            if (rs.next()) {
+                currentbalance = rs.getDouble("balance");
+            }
+            if ("activate".equalsIgnoreCase(confirmactivate(USERID))){
+                double savingpercentage = searchpercentage(USERID);//从数据库中找到percentage提取出来
+                double amountsavings = amountdebit * (savingpercentage/100.00);//这是计算的saving的值还得给到saving_balance数据库中
+                double newdebit = amountdebit*(1 - savingpercentage/100.00);//因为激活了saving所以debit要重新计算amountdebit*（1-percentage）
+                updatesaving_balance(USERID, amountsavings);//把amountsavings更新到saving_balance中（其实是加上amountsavings）
+                updateaccount_balance(USERID, newdebit);//这个在这里按理来说是加上新的debit的值及newdebit的值
+
+                amountdebit = amountdebit - amountsavings;
+
+
+                double newbalance = currentbalance + amountdebit;
+
+                String insert = "INSERT INTO Transactions(user_id, amount, description, transaction_type, balance) VALUES (?, ?, ?, 'debit', ?)";
+                pstmt = conn.prepareStatement(insert);
+                     pstmt.setInt(1, USERID);
+                    pstmt.setDouble(2, newdebit);
+                    pstmt.setString(3, balancedescription);
+                    pstmt.setDouble(4, newbalance);
+                    int countinsert = pstmt.executeUpdate();
+                    if (countinsert > 0) {
+                        System.out.println("Transaction Successfully Record!!!");
+                    }
+            }
+            else {
+                double newbalance = currentbalance + amountdebit;
+                String insert = "INSERT INTO Transactions(user_id, amount, description, transaction_type, balance) VALUES (?, ?, ?, 'debit', ?)";
+                pstmt = conn.prepareStatement(insert);
+                pstmt.setInt(1, USERID);
+                pstmt.setDouble(2, amountdebit);
+                pstmt.setString(3, balancedescription);
+                pstmt.setDouble(4, newbalance);
+                int countInsert = pstmt.executeUpdate();
+
+                if (countInsert > 0) {
+                    return true;
+
+                }
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return false;
+    }
+ public static void updatesaving_balance(int USERID, double amountsavings){
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try{
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+
+            String updatesavingbalance = "UPDATE saving_balance SET savings_amount = savings_amount + ? WHERE user_id = ?";
+            pstmt = conn.prepareStatement(updatesavingbalance);
+            pstmt.setDouble(1, amountsavings);
+            pstmt.setInt(2, USERID);
+
+
+            int row = pstmt.executeUpdate();
+            if (row > 0) {
+                System.out.println("Updates savings_amount balance successfully!!!");
+                String select = "SELECT savings_amount FROM saving_balance WHERE user_id = ?";
+                pstmt = conn.prepareStatement(select);
+                pstmt.setInt(1, USERID);
+
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()){
+                    System.out.println("Your savings: " + rs.getString("savings_amount"));}
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    //此方法是account_balance加上newdebit
+    public static void updateaccount_balance(int USERID, double newdebit){
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try{
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+            //对amount_balance的更新操作使原有的amount_balance加上现有的即使balance加上乘上percentage的debit
+            String updateaccountbalance = "UPDATE Account_Balance SET balance = balance + ? WHERE user_id = ?";
+            pstmt = conn.prepareStatement(updateaccountbalance);
+
+            pstmt.setDouble(1, newdebit);
+            pstmt.setInt(2, USERID);
+            int row = pstmt.executeUpdate();
+            if (row > 0) {
+                System.out.println("Updates account balance successfully!!!" + "The savings are successfully recorded");
+                String select = "SELECT balance FROM Account_Balance WHERE user_id = ?";
+                pstmt = conn.prepareStatement(select);
+                pstmt.setInt(1, USERID);
+
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()){
+                    System.out.println("Current account balance is" + rs.getString("balance"));
+
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String confirmactivate(int USERID) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try{
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+
+            String confirmactivate = "SELECT status FROM savings WHERE user_id = ?";
+            pstmt = conn.prepareStatement(confirmactivate);
+            pstmt.setInt(1, USERID);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("status");
+
+            }
+
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+    public static double searchpercentage(int USERID) {//no problem
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+            String searchpercent = "SELECT percentage FROM savings WHERE user_id = ?";//因为之前激活了所以存储了userid
+            pstmt = conn.prepareStatement(searchpercent);
+            pstmt.setInt(1, USERID);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble("percentage");
+            }
+
+
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        return 0;
+    }
+
+
+    public static void updatetoAccount_Balance(double amountdebit, int USERID) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+            if ("active".equalsIgnoreCase(confirmactivate(USERID))){
+                return;
+            }
+            String updatebalance = "UPDATE Account_Balance SET balance = ? WHERE user_id = ?";
+            pstmt = conn.prepareStatement(updatebalance);
+            pstmt.setDouble(1, amountdebit);
+            pstmt.setDouble(2, USERID);
+            int countupdate = pstmt.executeUpdate();
+            if (countupdate > 0) {
+                System.out.println("Balance: " + displaybysql(USERID));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+
+    }
+public static void updatetoAccount_Balancecredit(double credit, int USERID){
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+            String updatebalancecredit = "UPDATE Account_Balance SET balance = balance - ? WHERE user_id = ?";
+            pstmt = conn.prepareStatement(updatebalancecredit);
+            pstmt.setDouble(1, credit);
+            pstmt.setDouble(2, USERID);
+            int countupdatecredit = pstmt.executeUpdate();
+            if (countupdatecredit > 0){
+                System.out.println("Balance: " + displaybysql(USERID));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public static double displaybysql(int USERID){
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+            String select = "SELECT balance FROM Account_Balance WHERE user_id = ?";
+            pstmt = conn.prepareStatement(select);
+
+            pstmt.setDouble(1, USERID);
+            rs = pstmt.executeQuery();
+            if (rs.next()){
+                return rs.getDouble("balance");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return 0.0;
+}
+public static void  insertintosavings(int USERID, double savingspercentage){//把percentage和status都插进了SQL中
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        int user_id = USERID;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+
+            String insert = "INSERT INTO Savings(user_id, status, percentage) VALUES(?,'activate',?)";
+            pstmt = conn.prepareStatement(insert);
+
+            pstmt.setInt(1, user_id);
+            pstmt.setDouble(2, savingspercentage);
+
+            int countinsert = pstmt.executeUpdate();
+            if (countinsert > 0){
+                System.out.println("Your statud has been recorded!!!");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+public static void insertintosavingbalance(int USERID){
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+
+            String insertinto = "INSERT INTO Saving_balance (user_id) VALUE(?)";
+            pstmt = conn.prepareStatement(insertinto);
+            pstmt.setInt(1, USERID);
+            int countinsert = pstmt.executeUpdate();
+            if (countinsert > 0){
+                System.out.println("Your userid has been recorded in saving_balance");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
