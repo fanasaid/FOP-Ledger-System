@@ -1,0 +1,145 @@
+package ledger;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLOutput;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Scanner;
+import java.sql.*;
+public class Filtering {
+    private static int USERID;
+    private static final String MySQL_URL = "jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false";
+    private static final String MySQL_USER = "root";
+    private static final String MySQL_PASSWORD = "123456";
+
+    private Connection conn;
+    private PreparedStatement pstmt;
+    private ResultSet resultSet;
+    private String transactionType;
+    private double min;
+    private double max;
+    private String startTime;
+    private String endTime;
+
+    public Filtering(){
+    USERID = LedgerSystem.USERID;
+    this.conn = null;
+    this.pstmt = null;
+    this.resultSet = null;
+    this.transactionType = null;
+    this.min = 0.00;
+    this.max = 0.00;
+    this.startTime = null;
+    this.endTime = null;
+    try {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        conn = DriverManager.getConnection(MySQL_URL, MySQL_USER, MySQL_PASSWORD);
+    } catch (ClassNotFoundException e) {
+        throw new RuntimeException(e);
+    } catch (SQLException e) {
+        throw new RuntimeException(e);
+    }
+}
+public void setTransactionType(){
+    Scanner sc = new Scanner(System.in);
+    System.out.println("Enter Transaction Type: ");
+    this.transactionType = sc.nextLine();
+}
+public void FilteringbyTransactionType(){
+    String fttt = "SELECT * FROM Transactions WHERE user_id = ? AND transaction_type = ?";
+    try{
+        pstmt = conn.prepareStatement(fttt);
+        pstmt.setInt(1, USERID);
+        pstmt.setString(2, transactionType);
+        resultSet = pstmt.executeQuery();
+    System.out.printf("%-20s %-20s %-20s %-20s %-20s\n", "transaction_type", "user_id", "transaction_id", "amount", "description", "date");
+        while (resultSet.next()){
+              String transaction_type = resultSet.getString("transaction_type");
+              String user_id = resultSet.getString("user_id");
+              String transaction_id = resultSet.getString("transaction_id");
+              String amount = resultSet.getString("amount");
+              String description = resultSet.getString("description");
+              String date = resultSet.getString("date");
+
+            System.out.printf("%-20s %-20s %-20s %-20s %-20s %-20s\n", transaction_type, user_id, transaction_id, amount, description, date);
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
+public void setAmountRange(){
+    Scanner sc = new Scanner(System.in);
+    System.out.println("Enter Amount Range: ");
+    this.min = sc.nextDouble();
+    this.max = sc.nextDouble();
+}
+public void filteringbyAmountRange(){
+    String fttt = "SELECT * FROM Transactions WHERE user_id = ? AND Amount BETWEEN ? AND ?";
+    try {
+        pstmt = conn.prepareStatement(fttt);
+        pstmt.setInt(1, USERID);
+        pstmt.setDouble(2, min);
+        pstmt.setDouble(3, max);
+        resultSet = pstmt.executeQuery();
+        System.out.printf("%-20s %-20s %-20s %-20s %-20s\n", "transaction_type", "user_id", "transaction_id", "amount", "description", "date");
+
+        while (resultSet.next()){
+            String transaction_type = resultSet.getString("transaction_type");
+            String user_id = resultSet.getString("user_id");
+            String transaction_id = resultSet.getString("transaction_id");
+            String amount = resultSet.getString("amount");
+            String description = resultSet.getString("description");
+            String date = resultSet.getString("date");
+
+            System.out.printf("%-20s %-20s %-20s %-20s %-20s %-20s\n", transaction_type, user_id, transaction_id, amount, description, date);
+
+        }
+    } catch (SQLException e) {
+        throw new RuntimeException(e);
+    }
+}
+public void setDateRange(){
+
+    Scanner sc = new Scanner(System.in);
+    System.out.println("Enter your start date: ");
+    this.startTime = sc.nextLine() + " 00:00:00";
+    System.out.println("Enter your end date: ");
+    this.endTime = sc.nextLine() + " 23:59:59";
+}
+public void filteringbyDateRange(){
+    String ftdr = "SELECT * FROM Transactions WHERE user_id = ? AND Date BETWEEN ? AND ? ";
+
+    try{
+
+        SimpleDateFormat ft = new SimpleDateFormat("yyyy-MM-dd");
+        java.util.Date startDate = ft.parse(startTime);
+        java.util.Date endDate = ft.parse(endTime);
+
+        String StartDate = ft.format(startDate);
+        String EndDate = ft.format(endDate);
+        pstmt = conn.prepareStatement(ftdr);
+        pstmt.setInt(1, USERID);
+        pstmt.setString(2, StartDate);
+        pstmt.setString(3, EndDate);
+        resultSet = pstmt.executeQuery();
+        System.out.printf("%-20s %-20s %-20s %-20s %-20s\n", "transaction_type", "user_id", "transaction_id", "amount", "description", "date");
+        while (resultSet.next()){
+            String transaction_type = resultSet.getString("transaction_type");
+            String user_id = resultSet.getString("user_id");
+            String transaction_id = resultSet.getString("transaction_id");
+            String amount = resultSet.getString("amount");
+            String description = resultSet.getString("description");
+            String date = resultSet.getString("date");
+            System.out.printf("%-20s %-20s %-20s %-20s %-20s %-20s\n", transaction_type, user_id, transaction_id, amount, description, date);
+
+        }
+    } catch (SQLException e) {
+        throw new RuntimeException(e);
+    } catch (ParseException e) {
+        throw new RuntimeException(e);
+    }
+
+}
+}
