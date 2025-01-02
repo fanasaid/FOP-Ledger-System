@@ -11,10 +11,10 @@ case 5:
                 for (int month=1; month<=period; month++) {
                     System.out.printf("Month "+month+": Pay %.2f\n", monthlyPayment);
                 }
-                inserintoLoans(USERID, pAmount, rate, period);
+                inserintoLoans(USERID, pAmount, rate, period，totalRepayment);
 
 
-    public static void inserintoLoans(int USERID, double pAmount, double rate, int period) {
+   public static void inserintoLoans(int USERID, double pAmount, double rate, int period, double totalRepayment) {
 
     Connection conn = null;
     PreparedStatement pstmt = null;
@@ -22,12 +22,13 @@ case 5:
         Class.forName("com.mysql.cj.jdbc.Driver");
         conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
 
-        String insert = "INSERT INTO LOANS (user_id, principal_amount, interest_rate, repayment_period, status) VALUES(?,?,?,?,'active')";
+        String insert = "INSERT INTO LOANS (user_id, principal_amount, interest_rate, repayment_period, outstanding_balance, status) VALUES(?,?,?,?,?,'active')";
         pstmt = conn.prepareStatement(insert);
         pstmt.setInt(1, USERID);
         pstmt.setDouble(2, pAmount);
         pstmt.setDouble(3, rate);
         pstmt.setInt(4, period);
+        pstmt.setDouble(5, totalRepayment);
         int countrows = pstmt.executeUpdate();
         if (countrows > 0){
             System.out.println("Your loans have been recorded!!!");
@@ -42,5 +43,4 @@ case 5:
         throw new RuntimeException(e);
     }
 }
-
     
