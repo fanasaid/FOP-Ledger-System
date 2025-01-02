@@ -1,27 +1,184 @@
+package ledger;
+import java.time.LocalDateTime; //used in date n time setting
+import java.time.format.DateTimeFormatter;//used in date n time setting
+import java.util.Scanner;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.*;
 
-//at your code's line of 49 i add a method called updateoutstandingbalance(USERID, outstanding_balance)
 
-public static void updateoutstandingbalance(int USERID, double outstandingbalance){
-    Connection conn = null;
-    PreparedStatement pstmt = null;
+public class Repay_loan {
+    private static int USERID;
+    private static final String MySQL_URL = "jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false";
+    private static final String MySQL_USER = "root";
+    private static final String MySQL_PASSWORD = "123456";
 
-    try {
-        Class.forName("com.mysql.cj.jdbc.Driver");
-        conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+    private Connection conn;
+    private PreparedStatement pstmt;
+    private ResultSet resultSet;
+    private final Object lock = new Object();
+    private double outstanding_balance;
 
-        String update = "UPDATE Loans SET OUTSTANDING_BALANCE = ? , status = 'repaid' WHERE USERID = ?";
-        pstmt = conn..prepareStatement(update);
 
-        pstmt.setDouble(1, outstandingbalance);
-        pstmt.setInt(2, USERID);
-        int countrows = pstmt.executeUpdate();
-        if (countrows > 0){
-            System.out.println("UPDATE SUCCESSFULLY");
+    private LocalDateTime startDate = LocalDateTime.now(); //this is just temporary btw
+    //URGENT!!!
+    //"private LocalDateTime startDate = LocalDateTime.now();" needs to be initialised under credit loan pay 
+    //to start counting of 30 days
+
+    public static String currentTime(){
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return dtf.format(now);
+    }
+
+
+    public Repay_loan(int USERID) {
+        Scanner scanner = new Scanner(System.in);
+        this.USERID = USERID;
+        this.conn = null;
+        this.pstmt = null;
+        this.resultSet = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection(MySQL_URL, MySQL_USER, MySQL_PASSWORD);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        this.outstanding_balance = selectFromSQL();
+
+
+
+        System.out.println("**************CREDIT LOAN*****************");
+        int repay=0 ;
+        while(repay!=3){
+            System.out.println("Please enter which transaction you wish to proceed.");
+            System.out.println("1. Pay Remaining Monthly Loan");
+            System.out.println("2. Check remainder balance for the month");
+            System.out.println("3. Return to Main Menu");
+            repay = scanner.nextInt();
+
+
+            switch (repay){
+                case 1:
+                    synchronized (lock){ //helps to prevent overlapping of values
+                        System.out.print("Please enter an amount : ");
+                        double payment = scanner.nextDouble();
+                        if(payment>0){
+                            this.outstanding_balance-=payment; //deduct for current credit loan balance
+                            UpdateSQL();
+                        }
+                    }
+                    System.out.println("Your transaction has been accounted.\nThank You for using HoneyVault!");
+                    System.out.println(currentTime());
+                    repay_at(currentTime());
+                    System.out.println("\n\n");
+                    break;
+
+                case 2:
+                    synchronized (lock){
+                        System.out.println("******************************************\n");
+                        System.out.println("Your ongoing balance this month is RM"+outstanding_balance);
+                        System.out.println("******************************************\n");
+
+                        synchronized (lock){
+                            LocalDateTime now = LocalDateTime.now();
+                            long daysBetween = java.time.Duration.between(startDate, now).toDays(); // Calculate days between
+
+                            if (daysBetween >= 30) { // check whether at least 30 days have passed
+                                if (outstanding_balance > 0) { //if got balance left unpaid
+                                    System.out.println("Credit and debit usage is barred due to late payment.\nWe apologize for any inconvenience caused.");
+
+
+                                } else {//if dont got balance
+                                    System.out.println("No outstanding balance.");
+                                }
+                                System.out.println("Thank you for patience and understanding.");
+
+                                startDate = now;//set new startDate ONLY if passed 30 days
+
+                            } else { //count how many days in between now to next payment
+                                long nextPayment;
+                                nextPayment = 30-daysBetween; //30 days set between each month
+                                System.out.println("Number of days till next monthly payment due is " +nextPayment);
+                                System.out.println("\n\n");
+                            }
+
+                            //add this section of code under credit and debit
+                            //i put an example of the code snippet below
+
+
+                        }
+
+                    }
+                    break;
+
+                case 3:
+                    return;//exits loop
+
+                default :
+                    System.out.println("Invalid selection.");
+                    break;//continue loop
+            }
+
+        }}
+public double selectFromSQL() {
+        String select = "SELECT outstanding_balance FROM LOANS WHERE user_id = ?";
+        try{
+            pstmt = conn.prepareStatement(select);
+            pstmt.setInt(1, USERID);
+            resultSet = pstmt.executeQuery();
+            if(resultSet.next()){
+               return outstanding_balance = resultSet.getDouble("outstanding_balance");
+            }
+            else System.out.println("Failed to select");
+            return -1;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
 
-    } catch (ClassNotFoundException e) {
-        throw new RuntimeException(e);
+}
+public void UpdateSQL(){
+        String update = "UPDATE LOANS SET outstanding_balance = ? WHERE user_id = ?";
+        try{
+            pstmt = conn.prepareStatement(update);
+            pstmt.setDouble(1, outstanding_balance);
+            pstmt.setInt(2, USERID);
+            pstmt.executeUpdate();
+            if(pstmt.getUpdateCount()>0){
+                System.out.println("Successfully updated");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+}
+   public void repay_at(String date){
+        String update = "UPDATE LOANS SET repay_at = ? WHERE user_id = ?";
+        try{
+            pstmt = conn.prepareStatement(update);
+            pstmt.setString(1, date);
+            pstmt.setInt(2, USERID);
+            pstmt.executeUpdate();
+            if(pstmt.getUpdateCount()>0){
+                System.out.println("Your repayment's date has been recorded");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+   }
+
+    public static void main(String[] args) {
+        System.out.println("Please enter a valid user ID");
+        Scanner scanner = new Scanner(System.in);
+        int userID = scanner.nextInt();
+        Repay_loan loanRepayment = new Repay_loan(userID);//start loan repayment system
     }
 
 
 }
+
+
+
