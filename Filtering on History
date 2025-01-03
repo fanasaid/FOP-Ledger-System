@@ -23,8 +23,8 @@ public class Filtering {
     private String startTime;
     private String endTime;
 
-    public Filtering(){
-    USERID = LedgerSystem.USERID;
+    public Filtering(int userID){
+    this.USERID = userID;
     this.conn = null;
     this.pstmt = null;
     this.resultSet = null;
@@ -142,4 +142,31 @@ public void filteringbyDateRange(){
     }
 
 }
+    public static void main(String[] args){
+        System.out.println("Please enter your userID: ");
+        Scanner sc = new Scanner(System.in);
+        int userID = sc.nextInt();
+        Filtering filter = new Filtering(userID);
+        System.out.println("Please choose a way you want to filter: "
+                + "\n1. Date Range"
+                + "\n2. Transaction Type"
+                + "\n3. Amount Range");
+        int choice = sc.nextInt();
+        switch (choice) {
+            case 1:
+                filter.setDateRange();
+                filter.filteringbyDateRange();
+                break;
+            case 2:
+                filter.setTransactionType();
+                filter.FilteringbyTransactionType();
+                break;
+            case 3:
+                filter.setAmountRange();
+                filter.filteringbyAmountRange();
+                break;
+            default:
+                System.out.println("Invalid choice. Try again!");
+        }
+    }
 }
