@@ -21,21 +21,19 @@ case 5:
         ResultSet rs = null;
 
         try {
+
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
 
-            // 检查是否存在对应用户的贷款记录
             String check = "SELECT loan_id FROM LOANS WHERE user_id = ?";
             pstmt = conn.prepareStatement(check);
             pstmt.setInt(1, USERID);
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                // 获取 loan_id
                 int loanId = rs.getInt("loan_id");
-
-                // 更新记录
-                String update = "UPDATE LOANS SET principal_amount = ?, interest_rate = ?, repayment_period = ?, outstanding_balance = ?, status = 'active' WHERE loan_id = ?";
+                //double principal_amount = rs.getDouble("principal_amount");
+                String update = "UPDATE LOANS SET principal_amount = principal_amount + ?, interest_rate = ?, repayment_period = ?, outstanding_balance = outstanding_balance + ?, status = 'active' WHERE loan_id = ?";
                 pstmt = conn.prepareStatement(update);
                 pstmt.setDouble(1, pAmount);
                 pstmt.setDouble(2, rate);
@@ -48,7 +46,6 @@ case 5:
                     System.out.println("Your loan has been updated successfully!");
                 }
             } else {
-                // 插入记录
                 String insert = "INSERT INTO LOANS (user_id, principal_amount, interest_rate, repayment_period, outstanding_balance, status) VALUES(?,?,?,?,?,'active')";
                 pstmt = conn.prepareStatement(insert);
                 pstmt.setInt(1, USERID);
@@ -64,12 +61,10 @@ case 5:
             }
 
         } catch (SQLException e) {
-            
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
-           
             try {
                 if (rs != null) rs.close();
                 if (pstmt != null) pstmt.close();
