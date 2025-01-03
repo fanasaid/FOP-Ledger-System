@@ -14,33 +14,68 @@ case 5:
                 inserintoLoans(USERID, pAmount, rate, period，totalRepayment);
 
 
-   public static void inserintoLoans(int USERID, double pAmount, double rate, int period, double totalRepayment) {
+ public static void inserintoLoans(int USERID, double pAmount, double rate, int period, double totalRepayment) {
 
-    Connection conn = null;
-    PreparedStatement pstmt = null;
-    try{
-        Class.forName("com.mysql.cj.jdbc.Driver");
-        conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
 
-        String insert = "INSERT INTO LOANS (user_id, principal_amount, interest_rate, repayment_period, outstanding_balance, status) VALUES(?,?,?,?,?,'active')";
-        pstmt = conn.prepareStatement(insert);
-        pstmt.setInt(1, USERID);
-        pstmt.setDouble(2, pAmount);
-        pstmt.setDouble(3, rate);
-        pstmt.setInt(4, period);
-        pstmt.setDouble(5, totalRepayment);
-        int countrows = pstmt.executeUpdate();
-        if (countrows > 0){
-            System.out.println("Your loans have been recorded!!!");
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/ledger?useUnicode=true&characterEncoding=utf8&useSSL=false", "root", "123456");
+
+            // 检查是否存在对应用户的贷款记录
+            String check = "SELECT loan_id FROM LOANS WHERE user_id = ?";
+            pstmt = conn.prepareStatement(check);
+            pstmt.setInt(1, USERID);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // 获取 loan_id
+                int loanId = rs.getInt("loan_id");
+
+                // 更新记录
+                String update = "UPDATE LOANS SET principal_amount = ?, interest_rate = ?, repayment_period = ?, outstanding_balance = ?, status = 'active' WHERE loan_id = ?";
+                pstmt = conn.prepareStatement(update);
+                pstmt.setDouble(1, pAmount);
+                pstmt.setDouble(2, rate);
+                pstmt.setInt(3, period);
+                pstmt.setDouble(4, totalRepayment);
+                pstmt.setInt(5, loanId);
+
+                int countupdate = pstmt.executeUpdate();
+                if (countupdate > 0) {
+                    System.out.println("Your loan has been updated successfully!");
+                }
+            } else {
+                // 插入记录
+                String insert = "INSERT INTO LOANS (user_id, principal_amount, interest_rate, repayment_period, outstanding_balance, status) VALUES(?,?,?,?,?,'active')";
+                pstmt = conn.prepareStatement(insert);
+                pstmt.setInt(1, USERID);
+                pstmt.setDouble(2, pAmount);
+                pstmt.setDouble(3, rate);
+                pstmt.setInt(4, period);
+                pstmt.setDouble(5, totalRepayment);
+
+                int countrows = pstmt.executeUpdate();
+                if (countrows > 0) {
+                    System.out.println("Your loan has been recorded successfully!");
+                }
+            }
+
+        } catch (SQLException e) {
+            
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+           
+            try {
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
-
-
-
-
-    } catch (SQLException e) {
-        throw new RuntimeException(e);
-    } catch (ClassNotFoundException e) {
-        throw new RuntimeException(e);
     }
-}
-    
